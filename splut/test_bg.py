@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
-from splut.bg import SimpleBackground
+from .bg import SimpleBackground
 import unittest, time, threading
 
 class TestSleeper(unittest.TestCase):
