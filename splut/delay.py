@@ -45,6 +45,7 @@ class Delay(SimpleBackground):
     def __call__(self, delay, task):
         t = Task(time.time() + delay, task)
         with self.taskslock:
+            # FIXME: Fails when trying to compare simultaneous tasks.
             self.tasks.insert(bisect.bisect(self.tasks, t), t)
         self.sleeper.interrupt()
 
