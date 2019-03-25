@@ -35,6 +35,8 @@ class Quit:
 
 class SimpleBackground:
 
+    daemon = False
+
     class Sleeper:
 
         def __init__(self):
@@ -53,7 +55,7 @@ class SimpleBackground:
 
     def start(self, bg, *interruptibles):
         self.quit = Quit([i.interrupt for i in interruptibles])
-        self.thread = threading.Thread(name = type(self).__name__, target = bg, args = interruptibles)
+        self.thread = threading.Thread(name = type(self).__name__, target = bg, args = interruptibles, daemon = self.daemon)
         self.thread.start()
 
     def stop(self):
