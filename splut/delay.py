@@ -48,9 +48,12 @@ class Delay(SimpleBackground):
         self.taskindex += 1
         self.tasks.insert(bisect.bisect(self.tasks, t), t)
 
-    def __call__(self, delay, task):
+    def after(self, delay, task):
+        self.at(time.time() + delay, task)
+
+    def at(self, when, task):
         with self.taskslock:
-            self._insert(time.time() + delay, task)
+            self._insert(when, task)
         self.sleeper.interrupt()
 
     def _bg(self, sleeper):
