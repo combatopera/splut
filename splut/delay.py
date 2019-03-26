@@ -22,7 +22,8 @@ import threading, logging, time, bisect
 
 log = logging.getLogger(__name__)
 
-class Task(namedtuple('BaseTask', 'when task')):
+# The taskindex ensures task objects are never compared:
+class Task(namedtuple('BaseTask', 'when taskindex task')):
 
     def __call__(self):
         try:
@@ -34,19 +35,22 @@ class Delay(SimpleBackground):
 
     @types()
     def __init__(self):
-        pass
+        self.taskindex = 0
+        self.tasks = []
 
     def start(self):
         self.sleeper = self.Sleeper()
-        self.tasks = []
         self.taskslock = threading.RLock()
         super().start(self._bg, self.sleeper)
 
+    def _insert(self, when, task):
+        t = Task(when, self.taskindex, task)
+        self.taskindex += 1
+        self.tasks.insert(bisect.bisect(self.tasks, t), t)
+
     def __call__(self, delay, task):
-        t = Task(time.time() + delay, task)
         with self.taskslock:
-            # FIXME: Fails when trying to compare simultaneous tasks.
-            self.tasks.insert(bisect.bisect(self.tasks, t), t)
+            self._insert(time.time() + delay, task)
         self.sleeper.interrupt()
 
     def _bg(self, sleeper):
