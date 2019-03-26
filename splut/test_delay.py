@@ -26,3 +26,5 @@ class TestDelay(unittest.TestCase):
         def g(): pass
         d._insert(500, f)
         d._insert(500, g)
+        self.assertEqual([], d._pop(499.9))
+        self.assertEqual([f, g], [t.task for t in d._pop(500)])

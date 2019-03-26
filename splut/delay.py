@@ -18,7 +18,7 @@
 from .bg import SimpleBackground
 from diapyr import types
 from collections import namedtuple
-import threading, logging, time, bisect
+import threading, logging, time, bisect, math
 
 log = logging.getLogger(__name__)
 
@@ -56,12 +56,16 @@ class Delay(SimpleBackground):
             self._insert(when, task)
         self.sleeper.interrupt()
 
+    def _pop(self, now):
+        i = bisect.bisect(self.tasks, (now, math.inf))
+        tasks = self.tasks[:i]
+        del self.tasks[:i]
+        return tasks
+
     def _bg(self, sleeper):
         while not self.quit:
             with self.taskslock:
-                i = bisect.bisect(self.tasks, (time.time(), None))
-                tasks = self.tasks[:i]
-                del self.tasks[:i]
+                tasks = self._pop(time.time())
             for task in tasks:
                 task()
             with self.taskslock:
