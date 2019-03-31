@@ -86,7 +86,7 @@ class MainBackground(SimpleBackground):
     def start(self, *interruptibles):
         super().start(self.bg, *interruptibles)
 
-    def profile(self, *args, **kwargs):
+    def profile(self, *args, **kwargs): # FIXME LATER: Suspect this does not profile other threads.
         profilepath = self.profilepath + time.strftime('.%Y-%m-%dT%H-%M-%S')
         tmpdir = tempfile.mkdtemp()
         try:
