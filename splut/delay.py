@@ -56,6 +56,12 @@ class Delay(SimpleBackground):
             self._insert(when, task)
         self.sleeper.interrupt()
 
+    def popall(self):
+        with self.taskslock:
+            tasks = self.tasks.copy()
+            self.tasks.clear()
+            return tasks
+
     def _pop(self, now):
         i = bisect.bisect(self.tasks, (now, math.inf))
         tasks = self.tasks[:i]
