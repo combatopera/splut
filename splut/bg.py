@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
-import threading, logging, tempfile, shutil, os, time
+from functools import partial
+import threading, logging, tempfile, os, time
 
 log = logging.getLogger(__name__)
 
@@ -69,15 +70,25 @@ class Profile:
         self.sort = sort
         self.path = path
 
+    def __call__(self, target, *args, **kwargs):
+        profilepath = self.path + time.strftime('.%Y-%m-%dT%H-%M-%S')
+        with tempfile.TemporaryDirectory() as tmpdir:
+            binpath = os.path.join(tmpdir, 'stats')
+            import cProfile
+            cProfile.runctx('target(*args, **kwargs)', globals(), locals(), binpath)
+            import pstats
+            with open(profilepath, 'w') as f:
+                stats = pstats.Stats(binpath, stream = f)
+                stats.sort_stats(self.sort)
+                stats.print_stats()
+
 class MainBackground(SimpleBackground):
 
     def __init__(self, config):
         if config.profile:
             if config.trace:
                 raise Exception
-            self.profilesort = config.profile.sort
-            self.profilepath = config.profile.path
-            self.bg = self.profile
+            self.bg = partial(config.profile, self)
         elif config.trace:
             self.bg = self.trace
         else:
@@ -85,22 +96,6 @@ class MainBackground(SimpleBackground):
 
     def start(self, *interruptibles):
         super().start(self.bg, *interruptibles)
-
-    def profile(self, *args, **kwargs): # FIXME LATER: Suspect this does not profile other threads.
-        profilepath = self.profilepath + time.strftime('.%Y-%m-%dT%H-%M-%S')
-        tmpdir = tempfile.mkdtemp()
-        try:
-            binpath = os.path.join(tmpdir, 'stats')
-            import cProfile
-            cProfile.runctx('self.__call__(*args, **kwargs)', globals(), locals(), binpath)
-            import pstats
-            with open(profilepath, 'w') as f:
-                stats = pstats.Stats(binpath, stream = f)
-                stats.sort_stats(self.profilesort)
-                stats.print_stats()
-                f.flush() # XXX: Why?
-        finally:
-            shutil.rmtree(tmpdir)
 
     def trace(self, *args, **kwargs):
         from trace import Trace
