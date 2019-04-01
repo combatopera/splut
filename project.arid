@@ -22,4 +22,3 @@ years +=
     2018
     2019
 pyversions += 3
-projects += diapyr

@@ -16,7 +16,6 @@
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
 from .bg import SimpleBackground
-from diapyr import types
 from collections import namedtuple
 import threading, logging, time, bisect, math
 
@@ -33,7 +32,6 @@ class Task(namedtuple('BaseTask', 'when taskindex task')):
 
 class Delay(SimpleBackground):
 
-    @types()
     def __init__(self):
         self.taskindex = 0
         self.tasks = []
