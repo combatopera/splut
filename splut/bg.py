@@ -54,9 +54,13 @@ class SimpleBackground:
                 self.interrupted = True
                 self.cv.notify() # There should be at most one.
 
+    def __init__(self, profile = None):
+        self.profile = profile
+
     def start(self, bg, *interruptibles):
         self.quit = Quit([i.interrupt for i in interruptibles])
-        self.thread = threading.Thread(name = type(self).__name__, target = bg, args = interruptibles, daemon = self.daemon)
+        target = bg if self.profile is None else partial(self.profile, bg)
+        self.thread = threading.Thread(name = type(self).__name__, target = target, args = interruptibles, daemon = self.daemon)
         self.thread.start()
 
     def stop(self):
@@ -84,11 +88,10 @@ class Profile:
 class MainBackground(SimpleBackground):
 
     def __init__(self, config):
-        if config.profile:
-            if config.trace:
-                raise Exception
-            self.bg = partial(config.profile, self)
-        elif config.trace:
+        super().__init__(config.profile)
+        if config.trace:
+            if config.profile:
+                raise Exception # XXX: Can they really not be combined?
             self.bg = self.trace
         else:
             self.bg = self
