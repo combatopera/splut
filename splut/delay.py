@@ -17,7 +17,7 @@
 
 from .bg import SimpleBackground
 from collections import namedtuple
-import threading, logging, time, bisect, math
+import threading, logging, time, heapq
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class Delay(SimpleBackground):
     def _insert(self, when, task):
         t = Task(when, self.taskindex, task)
         self.taskindex += 1
-        self.tasks.insert(bisect.bisect(self.tasks, t), t)
+        heapq.heappush(self.tasks, t)
 
     def after(self, delay, task):
         self.at(time.time() + delay, task)
@@ -62,10 +62,10 @@ class Delay(SimpleBackground):
             return tasks
 
     def _pop(self, now):
-        i = bisect.bisect(self.tasks, (now, math.inf))
-        tasks = self.tasks[:i]
-        del self.tasks[:i]
-        return tasks
+        def g():
+            while self.tasks and self.tasks[0].when <= now:
+                yield heapq.heappop(self.tasks)
+        return list(g())
 
     def _bg(self, sleeper):
         while not self.quit:
