@@ -65,13 +65,12 @@ class SimpleBackground:
 
 class Profile:
 
-    def __init__(self, time, sort = 'time', path = 'profile'):
+    def __init__(self, time, sort = 'time'):
         self.time = time
         self.sort = sort
-        self.path = path
 
     def __call__(self, target, *args, **kwargs):
-        profilepath = self.path + time.strftime('.%Y-%m-%dT%H-%M-%S')
+        profilepath = threading.current_thread().name + time.strftime('.%Y-%m-%dT%H-%M-%S')
         with tempfile.TemporaryDirectory() as tmpdir:
             binpath = os.path.join(tmpdir, 'stats')
             import cProfile
