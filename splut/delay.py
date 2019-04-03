@@ -30,11 +30,10 @@ class Task(namedtuple('BaseTask', 'when taskindex task')):
         except Exception:
             log.exception('Task failed:')
 
-class Delay(SimpleBackground):
+class AbstractWorker(SimpleBackground):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.taskindex = 0
         self.tasks = []
 
     def start(self):
@@ -42,24 +41,27 @@ class Delay(SimpleBackground):
         self.taskslock = threading.RLock()
         super().start(self._bg, self.sleeper)
 
-    def _insert(self, when, task):
-        t = Task(when, self.taskindex, task)
-        self.taskindex += 1
-        heapq.heappush(self.tasks, t)
+    def popall(self):
+        with self.taskslock:
+            tasks = self.tasks.copy()
+            self.tasks.clear()
+            return tasks
 
-    def after(self, delay, task):
-        self.at(time.time() + delay, task)
+class Delay(AbstractWorker):
+
+    taskindex = 0
+
+    def _insert(self, when, task):
+        heapq.heappush(self.tasks, Task(when, self.taskindex, task))
+        self.taskindex += 1
 
     def at(self, when, task):
         with self.taskslock:
             self._insert(when, task)
         self.sleeper.interrupt()
 
-    def popall(self):
-        with self.taskslock:
-            tasks = self.tasks.copy()
-            self.tasks.clear()
-            return tasks
+    def after(self, delay, task):
+        self.at(time.time() + delay, task)
 
     def _pop(self, now):
         def g():
@@ -79,27 +81,12 @@ class Delay(SimpleBackground):
         with self.taskslock:
             log.debug("Tasks denied: %s", len(self.tasks))
 
-class Worker(SimpleBackground):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.tasks = []
-
-    def start(self):
-        self.sleeper = Sleeper()
-        self.taskslock = threading.RLock()
-        super().start(self._bg, self.sleeper)
+class Worker(AbstractWorker):
 
     def add(self, task):
         with self.taskslock:
             self.tasks.append(task)
         self.sleeper.interrupt()
-
-    def popall(self):
-        with self.taskslock:
-            tasks = self.tasks.copy()
-            self.tasks.clear()
-            return tasks
 
     def _bg(self, sleeper):
         while not self.quit:
