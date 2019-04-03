@@ -34,25 +34,25 @@ class Quit:
     def __bool__(self):
         return self.quit
 
+class Sleeper:
+
+    def __init__(self):
+        self.cv = threading.Condition()
+        self.interrupted = False
+
+    def sleep(self, t):
+        with self.cv:
+            if self.interrupted or self.cv.wait(t):
+                self.interrupted = False
+
+    def interrupt(self):
+        with self.cv:
+            self.interrupted = True
+            self.cv.notify() # There should be at most one.
+
 class SimpleBackground:
 
     daemon = False
-
-    class Sleeper:
-
-        def __init__(self):
-            self.cv = threading.Condition()
-            self.interrupted = False
-
-        def sleep(self, t):
-            with self.cv:
-                if self.interrupted or self.cv.wait(t):
-                    self.interrupted = False
-
-        def interrupt(self):
-            with self.cv:
-                self.interrupted = True
-                self.cv.notify() # There should be at most one.
 
     def __init__(self, profile = None):
         self.profile = profile

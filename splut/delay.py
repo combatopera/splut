@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
-from .bg import SimpleBackground
+from .bg import SimpleBackground, Sleeper
 from collections import namedtuple
 import threading, logging, time, heapq
 
@@ -38,7 +38,7 @@ class Delay(SimpleBackground):
         self.tasks = []
 
     def start(self):
-        self.sleeper = self.Sleeper()
+        self.sleeper = Sleeper()
         self.taskslock = threading.RLock()
         super().start(self._bg, self.sleeper)
 
