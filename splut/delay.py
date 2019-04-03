@@ -78,3 +78,33 @@ class Delay(SimpleBackground):
             sleeper.sleep(sleeptime)
         with self.taskslock:
             log.debug("Tasks denied: %s", len(self.tasks))
+
+class Worker(SimpleBackground):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tasks = []
+
+    def start(self):
+        self.sleeper = Sleeper()
+        self.taskslock = threading.RLock()
+        super().start(self._bg, self.sleeper)
+
+    def add(self, task):
+        with self.taskslock:
+            self.tasks.append(task)
+        self.sleeper.interrupt()
+
+    def popall(self):
+        with self.taskslock:
+            tasks = self.tasks.copy()
+            self.tasks.clear()
+            return tasks
+
+    def _bg(self, sleeper):
+        while not self.quit:
+            for task in self.popall():
+                task()
+            sleeper.sleep()
+        with self.taskslock:
+            log.debug("Tasks denied: %s", len(self.tasks))

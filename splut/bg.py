@@ -40,7 +40,7 @@ class Sleeper:
         self.cv = threading.Condition()
         self.interrupted = False
 
-    def sleep(self, t):
+    def sleep(self, t = None):
         with self.cv:
             if self.interrupted or self.cv.wait(t):
                 self.interrupted = False
