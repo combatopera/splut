@@ -46,8 +46,8 @@ class Sleeper:
                 self.interrupted = False
 
     def interrupt(self):
-        'If a sleep is in progress that sleep returns now, otherwise the next sleep will return immediately.
-        This is similar behaviour to interrupting a maybe-sleeping thread in Java.'
+        '''If a sleep is in progress that sleep returns now, otherwise the next sleep will return immediately.
+        This is similar behaviour to interrupting a maybe-sleeping thread in Java.'''
         with self.cv:
             self.interrupted = True
             self.cv.notify() # There should be at most one.
