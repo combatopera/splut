@@ -47,6 +47,23 @@ class AbstractWorker(SimpleBackground):
             self.tasks.clear()
             return tasks
 
+    def _bg(self, sleeper):
+        while not self.quit:
+            sleeper.sleep(self.sleeptime())
+        with self.taskslock:
+            log.debug("Tasks denied: %s", len(self.tasks))
+
+class Worker(AbstractWorker):
+
+    def add(self, task):
+        with self.taskslock:
+            self.tasks.append(Task(None, None, task))
+        self.sleeper.interrupt()
+
+    def sleeptime(self):
+        for task in self.popall():
+            task()
+
 class Delay(AbstractWorker):
 
     taskindex = 0
@@ -69,29 +86,11 @@ class Delay(AbstractWorker):
                 yield heapq.heappop(self.tasks)
         return list(g())
 
-    def _bg(self, sleeper):
-        while not self.quit:
-            with self.taskslock:
-                tasks = self._pop(time.time())
-            for task in tasks:
-                task()
-            with self.taskslock:
-                sleeptime = self.tasks[0].when - time.time() if self.tasks else None
-            sleeper.sleep(sleeptime)
+    def sleeptime(self):
         with self.taskslock:
-            log.debug("Tasks denied: %s", len(self.tasks))
-
-class Worker(AbstractWorker):
-
-    def add(self, task):
+            tasks = self._pop(time.time())
+        for task in tasks:
+            task()
         with self.taskslock:
-            self.tasks.append(task)
-        self.sleeper.interrupt()
-
-    def _bg(self, sleeper):
-        while not self.quit:
-            for task in self.popall():
-                task()
-            sleeper.sleep()
-        with self.taskslock:
-            log.debug("Tasks denied: %s", len(self.tasks))
+            if self.tasks:
+                return self.tasks[0].when - time.time()
