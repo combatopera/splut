@@ -30,7 +30,9 @@ class Task(namedtuple('BaseTask', 'when taskindex task')):
         except Exception:
             log.exception('Task failed:')
 
-class AbstractWorker(SimpleBackground):
+class Delay(SimpleBackground):
+
+    taskindex = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -52,21 +54,6 @@ class AbstractWorker(SimpleBackground):
             sleeper.sleep(self.sleeptime())
         with self.taskslock:
             log.debug("Tasks denied: %s", len(self.tasks))
-
-class Worker(AbstractWorker):
-
-    def add(self, task):
-        with self.taskslock:
-            self.tasks.append(Task(None, None, task))
-        self.sleeper.interrupt()
-
-    def sleeptime(self):
-        for task in self.popall():
-            task()
-
-class Delay(AbstractWorker):
-
-    taskindex = 0
 
     def _insert(self, when, task):
         heapq.heappush(self.tasks, Task(when, self.taskindex, task))
