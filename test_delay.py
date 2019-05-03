@@ -15,3 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
+from delay import Delay
+import unittest
+
+class TestDelay(unittest.TestCase):
+
+    def test_simultaneous(self):
+        d = Delay()
+        def f(): pass
+        def g(): pass
+        d._insert(500, f)
+        d._insert(500, g)
+        self.assertEqual([], d._pop(499.9))
+        self.assertEqual([f, g], [t.task for t in d._pop(500)])
