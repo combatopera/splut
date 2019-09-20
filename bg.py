@@ -16,6 +16,7 @@
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import partial
+from concurrent.futures import Future
 import threading, logging, tempfile, os, time
 
 log = logging.getLogger(__name__)
@@ -61,7 +62,15 @@ class SimpleBackground:
 
     def start(self, bg, *interruptibles):
         self.quit = Quit([i.interrupt for i in interruptibles])
-        target = bg if self.profile is None else partial(self.profile, bg)
+        targetimpl = bg if self.profile is None else partial(self.profile, bg)
+        self.future = Future()
+        def target(*args, **kwargs):
+            try:
+                result = targetimpl(*args, **kwargs)
+            except BaseException as e:
+                self.future.set_exception(e)
+                raise
+            self.future.set_result(result)
         self.thread = threading.Thread(name = type(self).__name__, target = target, args = interruptibles, daemon = self.daemon)
         self.thread.start()
 
