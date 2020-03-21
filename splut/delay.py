@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
-from bg import SimpleBackground, Sleeper
+from .bg import SimpleBackground, Sleeper
 from collections import namedtuple
-import threading, logging, time, heapq
+import heapq, logging, threading, time
 
 log = logging.getLogger(__name__)
 

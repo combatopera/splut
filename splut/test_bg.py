@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
-from bg import Sleeper
-import unittest, time, threading
+from .bg import Sleeper
+from unittest import TestCase
+import threading, time
 
-class TestSleeper(unittest.TestCase):
+class TestSleeper(TestCase):
 
     def setUp(self):
         self.s = Sleeper()

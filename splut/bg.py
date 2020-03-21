@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
-from functools import partial
 from concurrent.futures import Future
-import threading, logging, tempfile, os, time
+from functools import partial
+import logging, os, tempfile, threading, time
 
 log = logging.getLogger(__name__)
 
