@@ -15,3 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
+def invokeall(callables):
+    '''Invoke every callable, even if one or more of them fail. This is mostly useful for synchronising with futures.
+    If all succeeded return their return values as a list, otherwise raise all exceptions thrown as a chain.'''
+    def drain():
+        nonlocal i
+        while i < n:
+            c = callables[i]
+            i += 1
+            try:
+                yield c()
+            except Exception:
+                for _ in drain():
+                    pass
+                raise
+    i, n = 0, len(callables)
+    return list(drain())
