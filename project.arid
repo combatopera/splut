@@ -23,3 +23,4 @@ years +=
     2019
     2020
 pyversions += 3
+buildbot enabled = true
