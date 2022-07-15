@@ -36,19 +36,21 @@ class Inbox:
     def _drain(self):
         try:
             while True:
-                self.queue.get_nowait().fire()
+                self.queue.get_nowait().fire(self)
         except Empty:
             self.cork.release()
 
 class Message:
 
-    def __init__(self, method):
-        self.future = Future()
+    def __init__(self, method, future = None):
         self.method = method
+        self.future = Future() if future is None else future
 
-    def fire(self):
+    def fire(self, inbox):
         try:
             r = self.method()
+        except Suspension as s:
+            s.catch(inbox, self.future)
         except BaseException as e:
             self.future.set_exception(e)
         else:
@@ -70,3 +72,23 @@ class Exchange:
                 return actormethod
         inbox = Inbox(self.executor, obj)
         return Actor()
+
+class Suspension(BaseException):
+
+    @property
+    def future(self):
+        return self.args[0]
+
+    @property
+    def then(self):
+        return self.args[1]
+
+    def catch(self, inbox, messagefuture):
+        def callback(f):
+            inbox.add(Message(partial(self.then, f), messagefuture))
+        self.future.add_done_callback(callback)
+
+def suspend(future):
+    def decorator(then):
+        raise Suspension(future, then)
+    return decorator
