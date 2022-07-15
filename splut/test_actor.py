@@ -43,6 +43,14 @@ class Encoder:
         def then(f):
             return f.result() + extra
 
+    def hmmm(self):
+        return 100
+
+    def hmm(self):
+        @suspend(self.this.hmmm())
+        def then(f):
+            return f.result()
+
 class TestExchange(TestCase):
 
     def test_works(self):
@@ -60,3 +68,9 @@ class TestExchange(TestCase):
             networkactor = exchange.spawn(Network())
             encoderactor = exchange.spawn(Encoder(networkactor))
             self.assertEqual('barbarbaz', encoderactor.foo().result())
+
+    def test_suspendthis(self):
+        with ThreadPoolExecutor() as e:
+            exchange = Exchange(e)
+            encoderactor = exchange.spawn(Encoder(None))
+            self.assertEqual(100, encoderactor.hmm().result())
