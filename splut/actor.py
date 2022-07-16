@@ -70,16 +70,16 @@ class Exchange:
         self.executor = executor
 
     def spawn(self, obj):
-        class Actor:
-            def __getattr__(self, name):
-                def post(*args, **kwargs):
-                    future = Future()
-                    inbox.add(Message(partial(method, *args, **kwargs), future))
-                    return future
-                method = getattr(obj, name)
-                return post
+        def __getattr__(self, name):
+            def post(*args, **kwargs):
+                future = Future()
+                inbox.add(Message(partial(method, *args, **kwargs), future))
+                return future
+            method = getattr(obj, name)
+            return post
         inbox = Inbox(self.executor, obj)
-        obj.actor = actor = Actor()
+        cls = type(f"{type(obj).__name__}Actor", (), {f.__name__: f for f in [__getattr__]})
+        obj.actor = actor = cls()
         return actor
 
 class Suspension(BaseException):
