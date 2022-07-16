@@ -62,6 +62,7 @@ class TestExchange(TestCase):
 
     def test_works(self):
         sumactor = self.x.spawn(Sum())
+        self.assertEqual('SumActor', type(sumactor).__name__)
         f = sumactor.plus(5)
         g = sumactor.plus(2)
         self.assertEqual(5, f.result())
