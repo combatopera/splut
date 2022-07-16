@@ -30,7 +30,7 @@ class Inbox:
 
     def add(self, message):
         self.queue.put(message)
-        if self.cork.acquire(False):
+        if self.cork.acquire(False): # FIXME: May fail just after thread gives up.
             self.executor.submit(self._drain)
 
     def _drain(self):
