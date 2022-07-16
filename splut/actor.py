@@ -73,9 +73,9 @@ class Exchange:
         class Actor:
             def __getattr__(self, name):
                 def post(*args, **kwargs):
-                    message = Message(partial(method, *args, **kwargs), Future())
-                    inbox.add(message)
-                    return message.future
+                    future = Future()
+                    inbox.add(Message(partial(method, *args, **kwargs), future))
+                    return future
                 method = getattr(obj, name)
                 return post
         inbox = Inbox(self.executor, obj)
