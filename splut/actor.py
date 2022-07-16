@@ -17,28 +17,36 @@
 
 from concurrent.futures import Future
 from functools import partial
-from queue import Empty, Queue
-from threading import Semaphore
+from threading import Lock
 
 class Inbox:
 
+    ttl = None
+
     def __init__(self, executor, obj):
-        self.queue = Queue()
-        self.cork = Semaphore()
+        self.queue = []
+        self.lock = Lock()
         self.executor = executor
         self.obj = obj
 
     def add(self, message):
-        self.queue.put(message)
-        if self.cork.acquire(False): # FIXME: May fail just after thread gives up.
-            self.executor.submit(self._drain)
+        with self.lock:
+            self.queue.append(message)
+            if self.ttl is None:
+                self.ttl = 1
+                self.executor.submit(self._drain)
+            else:
+                self.ttl += 1
 
     def _drain(self):
-        try:
-            while True:
-                self.queue.get_nowait().fire(self)
-        except Empty:
-            self.cork.release()
+        while True:
+            with self.lock:
+                if not self.ttl:
+                    del self.ttl
+                    break
+                self.ttl -= 1
+                message = self.queue.pop(0)
+            message.fire(self)
 
 class Message:
 
