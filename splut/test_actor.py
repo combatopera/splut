@@ -53,24 +53,25 @@ class Encoder:
 
 class TestExchange(TestCase):
 
+    def setUp(self):
+        self.e = ThreadPoolExecutor()
+        self.x = Exchange(self.e)
+
+    def tearDown(self):
+        self.e.shutdown()
+
     def test_works(self):
-        with ThreadPoolExecutor() as e:
-            exchange = Exchange(e)
-            sumactor = exchange.spawn(Sum())
-            f = sumactor.plus(5)
-            g = sumactor.plus(2)
-            self.assertEqual(5, f.result())
-            self.assertEqual(7, g.result())
+        sumactor = self.x.spawn(Sum())
+        f = sumactor.plus(5)
+        g = sumactor.plus(2)
+        self.assertEqual(5, f.result())
+        self.assertEqual(7, g.result())
 
     def test_suspend(self):
-        with ThreadPoolExecutor() as e:
-            exchange = Exchange(e)
-            networkactor = exchange.spawn(Network())
-            encoderactor = exchange.spawn(Encoder(networkactor))
-            self.assertEqual('barbarbaz', encoderactor.foo().result())
+        networkactor = self.x.spawn(Network())
+        encoderactor = self.x.spawn(Encoder(networkactor))
+        self.assertEqual('barbarbaz', encoderactor.foo().result())
 
     def test_suspendthis(self):
-        with ThreadPoolExecutor() as e:
-            exchange = Exchange(e)
-            encoderactor = exchange.spawn(Encoder(None))
-            self.assertEqual(100, encoderactor.hmm().result())
+        encoderactor = self.x.spawn(Encoder(None))
+        self.assertEqual(100, encoderactor.hmm().result())
