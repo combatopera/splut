@@ -72,12 +72,12 @@ class Exchange:
     def spawn(self, obj):
         class Actor:
             def __getattr__(self, name):
-                def actormethod(*args, **kwargs):
+                def post(*args, **kwargs):
                     message = Message(partial(method, *args, **kwargs))
                     inbox.add(message)
                     return message.future
                 method = getattr(obj, name)
-                return actormethod
+                return post
         inbox = Inbox(self.executor, obj)
         obj.this = actor = Actor()
         return actor
