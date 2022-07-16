@@ -85,7 +85,7 @@ class Exchange:
 class Suspension(BaseException):
 
     @property
-    def future(self):
+    def futures(self):
         return self.args[0]
 
     @property
@@ -95,9 +95,10 @@ class Suspension(BaseException):
     def catch(self, inbox, messagefuture):
         def callback(f):
             inbox.add(Message(partial(self.then, f), messagefuture))
-        self.future.add_done_callback(callback)
+        for f in self.futures:
+            f.add_done_callback(callback)
 
-def suspend(future):
+def suspend(*futures):
     def decorator(then):
-        raise Suspension(future, then)
+        raise Suspension(futures, then)
     return decorator
