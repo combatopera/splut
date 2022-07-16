@@ -79,7 +79,7 @@ class Exchange:
                 method = getattr(obj, name)
                 return post
         inbox = Inbox(self.executor, obj)
-        obj.this = actor = Actor()
+        obj.actor = actor = Actor()
         return actor
 
 class Suspension(BaseException):

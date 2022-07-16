@@ -47,7 +47,7 @@ class Encoder:
         return 100
 
     def hmm(self):
-        @suspend(self.this.hmmm())
+        @suspend(self.actor.hmmm())
         def then(f):
             return f.result()
 
