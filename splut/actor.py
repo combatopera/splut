@@ -50,9 +50,9 @@ class Inbox:
 
 class Message:
 
-    def __init__(self, method, future = None):
+    def __init__(self, method, future):
         self.method = method
-        self.future = Future() if future is None else future
+        self.future = future
 
     def fire(self, inbox):
         try:
@@ -73,7 +73,7 @@ class Exchange:
         class Actor:
             def __getattr__(self, name):
                 def post(*args, **kwargs):
-                    message = Message(partial(method, *args, **kwargs))
+                    message = Message(partial(method, *args, **kwargs), Future())
                     inbox.add(message)
                     return message.future
                 method = getattr(obj, name)
@@ -93,10 +93,10 @@ class Suspension(BaseException):
         return self.args[1]
 
     def catch(self, inbox, messagefuture):
-        def callback(f):
+        def post(f):
             inbox.add(Message(partial(self.then, f), messagefuture))
         for f in self.futures:
-            f.add_done_callback(callback)
+            f.add_done_callback(post)
 
 def suspend(*futures):
     def decorator(then):
