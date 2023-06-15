@@ -19,7 +19,7 @@ from concurrent.futures import Future
 from functools import partial
 from threading import Lock
 
-class Inbox:
+class Mailbox:
 
     ttl = None
 
@@ -54,11 +54,11 @@ class Message:
         self.method = method
         self.future = future
 
-    def fire(self, inbox):
+    def fire(self, mailbox):
         try:
             r = self.method()
         except Suspension as s:
-            s.catch(inbox, self.future)
+            s.catch(mailbox, self.future)
         except BaseException as e:
             self.future.set_exception(e)
         else:
@@ -73,11 +73,11 @@ class Exchange:
         def __getattr__(self, name):
             def post(*args, **kwargs):
                 future = Future()
-                inbox.add(Message(partial(method, *args, **kwargs), future))
+                mailbox.add(Message(partial(method, *args, **kwargs), future))
                 return future
             method = getattr(obj, name)
             return post
-        inbox = Inbox(self.executor, obj)
+        mailbox = Mailbox(self.executor, obj)
         cls = type(f"{type(obj).__name__}Actor", (), {f.__name__: f for f in [__getattr__]})
         obj.actor = actor = cls()
         return actor
@@ -92,9 +92,9 @@ class Suspension(BaseException):
     def then(self):
         return self.args[1]
 
-    def catch(self, inbox, messagefuture):
+    def catch(self, mailbox, messagefuture):
         def post(f):
-            inbox.add(Message(partial(self.then, f), messagefuture))
+            mailbox.add(Message(partial(self.then, f), messagefuture))
         for f in self.futures:
             f.add_done_callback(post)
 
