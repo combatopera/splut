@@ -23,11 +23,10 @@ class Mailbox:
 
     ttl = None
 
-    def __init__(self, executor, obj):
+    def __init__(self, executor):
         self.queue = []
         self.lock = Lock()
         self.executor = executor
-        self.obj = obj
 
     def add(self, message):
         with self.lock:
@@ -77,7 +76,7 @@ class Exchange:
                 return future
             method = getattr(obj, name)
             return post
-        mailbox = Mailbox(self.executor, obj)
+        mailbox = Mailbox(self.executor)
         cls = type(f"{type(obj).__name__}Actor", (), {f.__name__: f for f in [__getattr__]})
         obj.actor = actor = cls()
         return actor
