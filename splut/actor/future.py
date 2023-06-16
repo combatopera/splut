@@ -65,3 +65,6 @@ class Future:
                 self.callbacks.append(f)
                 return
         f(self)
+
+    def __await__(self):
+        yield 'FIXME'
