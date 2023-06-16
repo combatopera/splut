@@ -61,6 +61,6 @@ class Future:
                     return outcome.result()
                 self.condition.wait()
 
-    def add_done_callback(self, f):
+    def addcallback(self, f):
         with self.condition:
             self.callbacks.append(f)

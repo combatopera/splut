@@ -95,7 +95,7 @@ class Suspension(BaseException):
         def post(f):
             mailbox.add(Message(partial(self.then, f), messagefuture))
         for f in self.futures:
-            f.add_done_callback(post)
+            f.addcallback(post)
 
 def suspend(*futures):
     def decorator(then):
