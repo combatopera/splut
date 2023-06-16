@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
-from .actor import Exchange, suspend
+from .actor import Exchange
 from concurrent.futures import ThreadPoolExecutor
 from unittest import TestCase
 
@@ -37,19 +37,15 @@ class Encoder:
     def __init__(self, networkactor):
         self.networkactor = networkactor
 
-    def foo(self):
+    async def foo(self):
         extra = 'baz'
-        @suspend(self.networkactor.download('bar'))
-        def then(f):
-            return f.result() + extra
+        return await self.networkactor.download('bar') + extra
 
     def hmmm(self):
         return 100
 
-    def hmm(self):
-        @suspend(self.actor.hmmm())
-        def then(f):
-            return f.result()
+    async def hmm(self):
+        return await self.actor.hmmm()
 
 class TestExchange(TestCase):
 

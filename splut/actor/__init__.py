@@ -16,7 +16,7 @@
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
 from .future import AbruptOutcome, Future, NormalOutcome
-from functools import partial
+from inspect import iscoroutinefunction
 from threading import Lock
 
 class Mailbox:
@@ -49,19 +49,47 @@ class Mailbox:
 
 class Message:
 
-    def __init__(self, method, future):
+    def __init__(self, method, args, kwargs, future):
         self.method = method
+        self.args = args
+        self.kwargs = kwargs
+        self.future = future
+
+    def fire(self, mailbox):
+        if iscoroutinefunction(self.method):
+            c = self.method(*self.args, **self.kwargs)
+            try:
+                s = c.send(None)
+            except StopIteration as e:
+                self.future.set(NormalOutcome(e.value))
+            except BaseException as e:
+                self.future.set(AbruptOutcome(e))
+            else:
+                _catch(s, mailbox, self.future, c)
+        else:
+            try:
+                obj = self.method(*self.args, **self.kwargs)
+            except BaseException as e:
+                self.future.set(AbruptOutcome(e))
+            else:
+                self.future.set(NormalOutcome(obj))
+
+class AMessage:
+
+    def __init__(self, c, f, future):
+        self.c = c
+        self.f = f
         self.future = future
 
     def fire(self, mailbox):
         try:
-            obj = self.method()
-        except Suspension as s:
-            s.catch(mailbox, self.future)
+            s = self.c.send(self.f.result())
+        except StopIteration as e:
+            self.future.set(NormalOutcome(e.value))
         except BaseException as e:
             self.future.set(AbruptOutcome(e))
         else:
-            self.future.set(NormalOutcome(obj))
+            _catch(s, mailbox, self.future, self.c)
 
 class Exchange:
 
@@ -72,7 +100,7 @@ class Exchange:
         def __getattr__(self, name):
             def post(*args, **kwargs):
                 future = Future()
-                mailbox.add(Message(partial(method, *args, **kwargs), future))
+                mailbox.add(Message(method, args, kwargs, future))
                 return future
             method = getattr(obj, name)
             return post
@@ -81,23 +109,8 @@ class Exchange:
         obj.actor = actor = cls()
         return actor
 
-class Suspension(BaseException):
-
-    @property
-    def futures(self):
-        return self.args[0]
-
-    @property
-    def then(self):
-        return self.args[1]
-
-    def catch(self, mailbox, messagefuture):
-        def post(f):
-            mailbox.add(Message(partial(self.then, f), messagefuture))
-        for f in self.futures:
-            f.addcallback(post)
-
-def suspend(*futures):
-    def decorator(then):
-        raise Suspension(futures, then)
-    return decorator
+def _catch(s, mailbox, messagefuture, c):
+    def post(f):
+        mailbox.add(AMessage(c, f, messagefuture))
+    for f in s.futures:
+        f.addcallback(post)

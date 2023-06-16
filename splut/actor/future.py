@@ -67,4 +67,10 @@ class Future:
         f(self)
 
     def __await__(self):
-        yield 'FIXME'
+        x = yield Suspension(self)
+        return x
+
+class Suspension:
+
+    def __init__(self, *futures):
+        self.futures = futures
