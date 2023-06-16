@@ -15,61 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
+from .future import AbruptOutcome, Future, NormalOutcome
 from functools import partial
-from threading import Condition, Lock
-
-class Future:
-
-    class Result:
-
-        def __init__(self, obj):
-            self.obj = obj
-
-        def result(self):
-            return self.obj
-
-    class Exception:
-
-        def __init__(self, e):
-            self.e = e
-
-        def result(self):
-            raise self.e
-
-    r = None
-
-    def __init__(self):
-        self.callbacks = []
-        self.cv = Condition()
-
-    def set_result(self, value):
-        with self.cv:
-            assert self.r is None
-            self.r = self.Result(value)
-            self.cv.notify_all()
-        self._announce()
-
-    def set_exception(self, e):
-        with self.cv:
-            assert self.r is None
-            self.r = self.Exception(e)
-            self.cv.notify_all()
-        self._announce()
-
-    def _announce(self):
-        for f in self.callbacks:
-            f(self)
-
-    def result(self):
-        with self.cv:
-            while True:
-                r = self.r
-                if r is not None:
-                    return r.result()
-                self.cv.wait()
-
-    def add_done_callback(self, f):
-        self.callbacks.append(f)
+from threading import Lock
 
 class Mailbox:
 
@@ -107,13 +55,13 @@ class Message:
 
     def fire(self, mailbox):
         try:
-            r = self.method()
+            obj = self.method()
         except Suspension as s:
             s.catch(mailbox, self.future)
         except BaseException as e:
-            self.future.set_exception(e)
+            self.future.set(AbruptOutcome(e))
         else:
-            self.future.set_result(r)
+            self.future.set(NormalOutcome(obj))
 
 class Exchange:
 
