@@ -61,7 +61,7 @@ class Future:
 
     def addcallback(self, f):
         with self.condition:
-            if self.callbacks is None:
-                f(self)
-            else:
+            if self.callbacks is not None:
                 self.callbacks.append(f)
+                return
+        f(self)
