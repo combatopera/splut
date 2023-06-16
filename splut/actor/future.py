@@ -35,12 +35,11 @@ class AbruptOutcome:
 
 class Future:
 
-    outcome = None
-
     def __init__(self):
         self.condition = Condition()
         with self.condition:
             self.callbacks = []
+            self.outcome = None
 
     def set(self, outcome):
         assert outcome is not None
@@ -48,8 +47,7 @@ class Future:
             assert self.outcome is None
             self.outcome = outcome
             self.condition.notify_all()
-            callbacks = self.callbacks
-            del self.callbacks
+            callbacks, self.callbacks = self.callbacks, None
         for f in callbacks:
             f(self)
 
@@ -63,4 +61,7 @@ class Future:
 
     def addcallback(self, f):
         with self.condition:
-            self.callbacks.append(f)
+            if self.callbacks is None:
+                f(self)
+            else:
+                self.callbacks.append(f)
