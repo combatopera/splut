@@ -111,10 +111,10 @@ class TestSpawn(TestCase):
         class Q:
             def foo(self):
                 pass
-        class B:
+        class T:
             async def x(self, a):
                 await a.foo()
                 raise X
-        f = self.spawn(B()).x(self.spawn(Q()))
+        f = self.spawn(T()).x(self.spawn(Q()))
         with self.assertRaises(X):
             f.wait()
