@@ -31,7 +31,12 @@ class Message:
         self.future = future
 
     def resolve(self, obj):
-        return partial(self._fire, obj, getattr(obj, self.methodname))
+        try:
+            method = getattr(obj, self.methodname)
+        except AttributeError:
+            pass
+        else:
+            return partial(self._fire, obj, method)
 
     def _fire(self, obj, method, mailbox):
         if iscoroutinefunction(method):
