@@ -71,7 +71,9 @@ class TestExchange(TestCase):
         self.assertEqual('barbarbaz', encoderactor.foo().result())
 
     def test_suspendthis(self):
-        encoderactor = self.spawn(Encoder(None))
+        e = Encoder(None)
+        encoderactor = self.spawn(e)
+        e.actor = encoderactor
         self.assertEqual(100, encoderactor.hmm().result())
 
     def test_catch(self):

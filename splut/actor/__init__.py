@@ -32,8 +32,4 @@ class Spawn:
                 return future
             return post
         mailbox = Mailbox(self.executor, objs)
-        cls = type(f"{''.join({type(obj).__name__: None for obj in objs})}Actor", (), {f.__name__: f for f in [__getattr__]})
-        actor = cls()
-        for obj in objs:
-            obj.actor = actor
-        return actor
+        return type(f"{''.join({type(obj).__name__: None for obj in objs})}Actor", (), {f.__name__: f for f in [__getattr__]})()
