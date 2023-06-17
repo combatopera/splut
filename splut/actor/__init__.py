@@ -16,38 +16,9 @@
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
 from .future import AbruptOutcome, Future, NormalOutcome
+from .mailbox import Mailbox
 from functools import partial
 from inspect import iscoroutinefunction
-from threading import Lock
-
-class Mailbox:
-
-    ttl = None
-
-    def __init__(self, executor, objs):
-        self.queue = []
-        self.lock = Lock()
-        self.executor = executor
-        self.objs = objs
-
-    def add(self, message):
-        with self.lock:
-            self.queue.append(message)
-            if self.ttl is None:
-                self.ttl = 1
-                self.executor.submit(self._drain)
-            else:
-                self.ttl += 1
-
-    def _drain(self):
-        while True:
-            with self.lock:
-                if not self.ttl:
-                    del self.ttl
-                    break
-                self.ttl -= 1
-                message = self.queue.pop(0)
-            message.resolve(self.objs[0])(self)
 
 nulloutcome = NormalOutcome(None)
 
