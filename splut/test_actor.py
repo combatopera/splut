@@ -95,5 +95,3 @@ class TestExchange(TestCase):
         a = self.x.spawn(*sums)
         invokeall([a.plus(1).result for _ in range(100)])
         self.assertEqual(100, sum(s.s for s in sums))
-        print([s.s for s in sums])
-        raise
