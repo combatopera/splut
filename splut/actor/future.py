@@ -51,13 +51,16 @@ class Future:
         for f in callbacks:
             f(self)
 
-    def result(self):
+    def get(self):
         with self.condition:
             while True:
                 outcome = self.outcome
                 if outcome is not None:
-                    return outcome.result()
+                    return outcome
                 self.condition.wait()
+
+    def result(self):
+        return self.get().result()
 
     def addcallback(self, f):
         with self.condition:

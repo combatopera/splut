@@ -76,14 +76,14 @@ class Message:
 
 class AMessage:
 
-    def __init__(self, c, f, future):
+    def __init__(self, c, outcome, future):
         self.c = c
-        self.f = f
+        self.outcome = outcome
         self.future = future
 
     def fire(self, mailbox):
         try:
-            s = self.c.send(self.f.result())
+            s = self.c.send(self.outcome.result())
         except StopIteration as e:
             self.future.set(NormalOutcome(e.value))
         except BaseException as e:
@@ -114,6 +114,6 @@ class Exchange:
 
 def _catch(s, mailbox, messagefuture, c):
     def post(f):
-        mailbox.add(AMessage(c, f, messagefuture))
+        mailbox.add(AMessage(c, f.get(), messagefuture))
     for f in s.futures:
         f.addcallback(post)
