@@ -19,7 +19,7 @@ from .future import Future
 from .mailbox import Mailbox
 from .message import Message
 
-class Exchange:
+class Spawn:
 
     def __init__(self, executor):
         self.executor = executor

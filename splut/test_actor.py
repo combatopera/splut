@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
-from .actor import Exchange
+from .actor import Spawn
 from concurrent.futures import ThreadPoolExecutor
 from diapyr.util import invokeall
 from unittest import TestCase
@@ -52,7 +52,7 @@ class TestExchange(TestCase):
 
     def setUp(self):
         self.e = ThreadPoolExecutor()
-        self.x = Exchange(self.e)
+        self.x = Spawn(self.e)
 
     def tearDown(self):
         self.e.shutdown()
