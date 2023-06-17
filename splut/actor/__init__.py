@@ -40,7 +40,7 @@ class Message:
 
     def _fire(self, obj, method, mailbox):
         if iscoroutinefunction(method):
-            _corofire(obj, method(*self.args, **self.kwargs), nulloutcome, self.future, mailbox)
+            Coro(obj, method(*self.args, **self.kwargs)).fire(nulloutcome, self.future, mailbox)
         else:
             try:
                 obj = method(*self.args, **self.kwargs)
@@ -51,31 +51,36 @@ class Message:
 
 class AMessage:
 
-    def __init__(self, obj, c, outcome, future):
-        self.obj = obj
-        self.c = c
+    def __init__(self, coro, outcome, future):
+        self.coro = coro
         self.outcome = outcome
         self.future = future
 
     def resolve(self, obj):
-        if obj is self.obj:
+        if obj is self.coro.obj:
             return self._fire
 
     def _fire(self, mailbox):
-        _corofire(self.obj, self.c, self.outcome, self.future, mailbox)
+        self.coro.fire(self.outcome, self.future, mailbox)
 
-def _corofire(obj, coro, outcome, future, mailbox):
-    try:
-        s = outcome.propagate(coro)
-    except StopIteration as e:
-        future.set(NormalOutcome(e.value))
-    except BaseException as e:
-        future.set(AbruptOutcome(e))
-    else:
-        def post(f):
-            mailbox.add(AMessage(obj, coro, f.get(), future))
-        for f in s.futures:
-            f.addcallback(post)
+class Coro:
+
+    def __init__(self, obj, coro):
+        self.obj = obj
+        self.coro = coro
+
+    def fire(self, outcome, future, mailbox):
+        try:
+            s = outcome.propagate(self.coro)
+        except StopIteration as e:
+            future.set(NormalOutcome(e.value))
+        except BaseException as e:
+            future.set(AbruptOutcome(e))
+        else:
+            def post(f):
+                mailbox.add(AMessage(self, f.get(), future))
+            for f in s.futures:
+                f.addcallback(post)
 
 class Exchange:
 
