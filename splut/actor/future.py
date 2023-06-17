@@ -75,9 +75,4 @@ class Future:
         f(self)
 
     def __await__(self):
-        return (yield Suspension(self))
-
-class Suspension:
-
-    def __init__(self, *futures):
-        self.futures = futures
+        return (yield self)

@@ -67,7 +67,7 @@ class Coro:
 
     def fire(self, outcome, future, mailbox):
         try:
-            s = outcome.propagate(self.coro)
+            g = outcome.propagate(self.coro)
         except StopIteration as e:
             future.set(NormalOutcome(e.value))
         except BaseException as e:
@@ -75,5 +75,4 @@ class Coro:
         else:
             def post(f):
                 mailbox.add(AMessage(self, f.get(), future))
-            for f in s.futures:
-                f.addcallback(post)
+            g.addcallback(post)
