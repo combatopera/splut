@@ -95,3 +95,17 @@ class TestExchange(TestCase):
         a = self.x.spawn(*sums)
         invokeall([a.plus(1).result for _ in range(100)])
         self.assertEqual(100, sum(s.s for s in sums))
+
+    def test_asymmetricworkers(self):
+        class X:
+            def x(self):
+                return 100
+        class Y:
+            def y(self):
+                return 200
+        a = self.x.spawn(X(), Y())
+        self.assertEqual('XYActor', type(a).__name__)
+        g = a.y() # Skip unsuitable worker.
+        f = a.x()
+        self.assertEqual(100, f.result())
+        self.assertEqual(200, g.result())

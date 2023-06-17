@@ -58,10 +58,7 @@ class AMessage:
 
     def resolve(self, obj):
         if obj is self.coro.obj:
-            return self._fire
-
-    def _fire(self, mailbox):
-        self.coro.fire(self.outcome, self.future, mailbox)
+            return partial(self.coro.fire, self.outcome, self.future)
 
 class Coro:
 
@@ -95,8 +92,7 @@ class Exchange:
                 return future
             return post
         mailbox = Mailbox(self.executor, objs)
-        t, = {type(obj) for obj in objs}
-        cls = type(f"{t.__name__}Actor", (), {f.__name__: f for f in [__getattr__]})
+        cls = type(f"{''.join({type(obj).__name__: None for obj in objs})}Actor", (), {f.__name__: f for f in [__getattr__]})
         actor = cls()
         for obj in objs:
             obj.actor = actor
