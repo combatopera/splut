@@ -17,6 +17,7 @@
 
 from .actor import Exchange
 from concurrent.futures import ThreadPoolExecutor
+from diapyr.util import invokeall
 from unittest import TestCase
 
 class Sum:
@@ -72,3 +73,11 @@ class TestExchange(TestCase):
     def test_suspendthis(self):
         encoderactor = self.x.spawn(Encoder(None))
         self.assertEqual(100, encoderactor.hmm().result())
+
+    def test_sharedmailbox(self):
+        sums = [Sum() for _ in range(5)]
+        a = self.x.spawn(*sums)
+        invokeall([a.plus(1).result for _ in range(100)])
+        self.assertEqual(100, sum(s.s for s in sums))
+        print([s.s for s in sums])
+        raise
