@@ -73,9 +73,10 @@ class TestSpawn(TestCase):
     def test_catch(self):
         class X(Exception):
             pass
+        x = X()
         class Thrower:
             def x(self):
-                raise X
+                raise x
             def y(self):
                 return 200
         class Obj:
@@ -84,15 +85,15 @@ class TestSpawn(TestCase):
             async def foo(self):
                 try:
                     await self.a.x()
-                except X:
-                    return 100
+                except Exception as e:
+                    return e
             async def foo2(self):
                 try:
                     await self.a.x()
                 except X:
                     return await self.a.y()
         a = self.spawn(Obj(self.spawn(Thrower())))
-        self.assertEqual(100, a.foo().wait())
+        self.assertIs(x, a.foo().wait())
         self.assertEqual(200, a.foo2().wait())
 
     def test_sharedmailbox(self):
