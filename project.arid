@@ -24,4 +24,6 @@ years +=
     2020
 pyversions += 3
 buildbot enabled = true
-test requires += diapyr
+test requires +=
+    diapyr
+    lagoon
