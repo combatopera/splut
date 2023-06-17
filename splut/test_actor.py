@@ -52,13 +52,13 @@ class TestExchange(TestCase):
 
     def setUp(self):
         self.e = ThreadPoolExecutor()
-        self.x = Spawn(self.e)
+        self.spawn = Spawn(self.e)
 
     def tearDown(self):
         self.e.shutdown()
 
     def test_works(self):
-        sumactor = self.x.spawn(Sum())
+        sumactor = self.spawn(Sum())
         self.assertEqual('SumActor', type(sumactor).__name__)
         f = sumactor.plus(5)
         g = sumactor.plus(2)
@@ -66,12 +66,12 @@ class TestExchange(TestCase):
         self.assertEqual(7, g.result())
 
     def test_suspend(self):
-        networkactor = self.x.spawn(Network())
-        encoderactor = self.x.spawn(Encoder(networkactor))
+        networkactor = self.spawn(Network())
+        encoderactor = self.spawn(Encoder(networkactor))
         self.assertEqual('barbarbaz', encoderactor.foo().result())
 
     def test_suspendthis(self):
-        encoderactor = self.x.spawn(Encoder(None))
+        encoderactor = self.spawn(Encoder(None))
         self.assertEqual(100, encoderactor.hmm().result())
 
     def test_catch(self):
@@ -88,11 +88,11 @@ class TestExchange(TestCase):
                     await self.a.x()
                 except X:
                     return 100
-        self.assertEqual(100, self.x.spawn(C(self.x.spawn(A()))).foo().result())
+        self.assertEqual(100, self.spawn(C(self.spawn(A()))).foo().result())
 
     def test_sharedmailbox(self):
         sums = [Sum() for _ in range(5)]
-        a = self.x.spawn(*sums)
+        a = self.spawn(*sums)
         invokeall([a.plus(1).result for _ in range(100)])
         self.assertEqual(100, sum(s.s for s in sums))
 
@@ -103,7 +103,7 @@ class TestExchange(TestCase):
         class Y:
             def y(self):
                 return 200
-        a = self.x.spawn(X(), Y())
+        a = self.spawn(X(), Y())
         self.assertEqual('XYActor', type(a).__name__)
         g = a.y() # Skip unsuitable worker.
         f = a.x()
@@ -120,6 +120,6 @@ class TestExchange(TestCase):
             async def x(self, a):
                 await a.foo()
                 raise X
-        f = self.x.spawn(B()).x(self.x.spawn(A()))
+        f = self.spawn(B()).x(self.spawn(A()))
         with self.assertRaises(X):
             f.result()

@@ -69,7 +69,7 @@ class TestWorkPool(TestCase):
         for _ in range(5):
             self.workers.append(Worker(self.masterdir))
         with ThreadPoolExecutor() as e:
-            a = Spawn(e).spawn(*self.workers)
+            a = Spawn(e)(*self.workers)
             futures = [t(i, i) for t in [a.typea, a.typeb, a.typec] for i in range(4)]
             invokeall([f.result for f in futures])
         self.assertEqual([

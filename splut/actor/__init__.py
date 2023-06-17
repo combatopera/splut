@@ -24,7 +24,7 @@ class Spawn:
     def __init__(self, executor):
         self.executor = executor
 
-    def spawn(self, *objs):
+    def __call__(self, *objs):
         def __getattr__(self, name):
             def post(*args, **kwargs):
                 future = Future()
