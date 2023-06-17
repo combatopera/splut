@@ -47,6 +47,8 @@ class Mailbox:
                 message = self.queue.pop(0)
             message.fire(self)
 
+nulloutcome = NormalOutcome(None)
+
 class Message:
 
     def __init__(self, method, args, kwargs, future):
@@ -57,15 +59,7 @@ class Message:
 
     def fire(self, mailbox):
         if iscoroutinefunction(self.method):
-            c = self.method(*self.args, **self.kwargs)
-            try:
-                s = c.send(None)
-            except StopIteration as e:
-                self.future.set(NormalOutcome(e.value))
-            except BaseException as e:
-                self.future.set(AbruptOutcome(e))
-            else:
-                _catch(s, mailbox, self.future, c)
+            _corofire(self.method(*self.args, **self.kwargs), nulloutcome, self.future, mailbox)
         else:
             try:
                 obj = self.method(*self.args, **self.kwargs)
@@ -82,14 +76,17 @@ class AMessage:
         self.future = future
 
     def fire(self, mailbox):
-        try:
-            s = self.c.send(self.outcome.result())
-        except StopIteration as e:
-            self.future.set(NormalOutcome(e.value))
-        except BaseException as e:
-            self.future.set(AbruptOutcome(e))
-        else:
-            _catch(s, mailbox, self.future, self.c)
+        _corofire(self.c, self.outcome, self.future, mailbox)
+
+def _corofire(coro, outcome, future, mailbox):
+    try:
+        s = coro.send(outcome.result())
+    except StopIteration as e:
+        future.set(NormalOutcome(e.value))
+    except BaseException as e:
+        future.set(AbruptOutcome(e))
+    else:
+        _catch(s, mailbox, future, coro)
 
 class Exchange:
 
