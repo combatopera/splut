@@ -17,6 +17,11 @@
 
 from threading import Lock
 
+class Worker:
+
+    def __init__(self, obj):
+        self.obj = obj
+
 class Mailbox:
 
     ttl = None
@@ -25,7 +30,7 @@ class Mailbox:
         self.queue = []
         self.lock = Lock()
         self.executor = executor
-        self.objs = objs
+        self.workers = [Worker(obj) for obj in objs]
 
     def add(self, message):
         with self.lock:
@@ -44,4 +49,4 @@ class Mailbox:
                     break
                 self.ttl -= 1
                 message = self.queue.pop(0)
-            message.resolve(self.objs[0])(self)
+            message.resolve(self.workers[0].obj)(self)
