@@ -16,6 +16,7 @@
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
 from .future import AbruptOutcome, Future, NormalOutcome
+from functools import partial
 from inspect import iscoroutinefunction
 from threading import Lock
 
@@ -23,10 +24,11 @@ class Mailbox:
 
     ttl = None
 
-    def __init__(self, executor):
+    def __init__(self, executor, objs):
         self.queue = []
         self.lock = Lock()
         self.executor = executor
+        self.objs = objs
 
     def add(self, message):
         with self.lock:
@@ -45,24 +47,27 @@ class Mailbox:
                     break
                 self.ttl -= 1
                 message = self.queue.pop(0)
-            message.fire(self)
+            message.resolve(self.objs[0])(self)
 
 nulloutcome = NormalOutcome(None)
 
 class Message:
 
-    def __init__(self, method, args, kwargs, future):
-        self.method = method
+    def __init__(self, methodname, args, kwargs, future):
+        self.methodname = methodname
         self.args = args
         self.kwargs = kwargs
         self.future = future
 
-    def fire(self, mailbox):
-        if iscoroutinefunction(self.method):
-            _corofire(self.method(*self.args, **self.kwargs), nulloutcome, self.future, mailbox)
+    def resolve(self, obj):
+        return partial(self._fire, getattr(obj, self.methodname))
+
+    def _fire(self, method, mailbox):
+        if iscoroutinefunction(method):
+            _corofire(method(*self.args, **self.kwargs), nulloutcome, self.future, mailbox)
         else:
             try:
-                obj = self.method(*self.args, **self.kwargs)
+                obj = method(*self.args, **self.kwargs)
             except BaseException as e:
                 self.future.set(AbruptOutcome(e))
             else:
@@ -75,7 +80,10 @@ class AMessage:
         self.outcome = outcome
         self.future = future
 
-    def fire(self, mailbox):
+    def resolve(self, obj):
+        return self._fire
+
+    def _fire(self, mailbox):
         _corofire(self.c, self.outcome, self.future, mailbox)
 
 def _corofire(coro, outcome, future, mailbox):
@@ -100,11 +108,10 @@ class Exchange:
         def __getattr__(self, name):
             def post(*args, **kwargs):
                 future = Future()
-                mailbox.add(Message(method, args, kwargs, future))
+                mailbox.add(Message(name, args, kwargs, future))
                 return future
-            method = getattr(objs[0], name)
             return post
-        mailbox = Mailbox(self.executor)
+        mailbox = Mailbox(self.executor, objs)
         t, = {type(obj) for obj in objs}
         cls = type(f"{t.__name__}Actor", (), {f.__name__: f for f in [__getattr__]})
         actor = cls()
