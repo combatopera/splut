@@ -31,11 +31,11 @@ class Message:
         self.future = future
 
     def resolve(self, obj):
-        return partial(self._fire, getattr(obj, self.methodname))
+        return partial(self._fire, obj, getattr(obj, self.methodname))
 
-    def _fire(self, method, mailbox):
+    def _fire(self, obj, method, mailbox):
         if iscoroutinefunction(method):
-            _corofire(method(*self.args, **self.kwargs), nulloutcome, self.future, mailbox)
+            _corofire(obj, method(*self.args, **self.kwargs), nulloutcome, self.future, mailbox)
         else:
             try:
                 obj = method(*self.args, **self.kwargs)
@@ -46,18 +46,20 @@ class Message:
 
 class AMessage:
 
-    def __init__(self, c, outcome, future):
+    def __init__(self, obj, c, outcome, future):
+        self.obj = obj
         self.c = c
         self.outcome = outcome
         self.future = future
 
     def resolve(self, obj):
-        return self._fire
+        if obj is self.obj:
+            return self._fire
 
     def _fire(self, mailbox):
-        _corofire(self.c, self.outcome, self.future, mailbox)
+        _corofire(self.obj, self.c, self.outcome, self.future, mailbox)
 
-def _corofire(coro, outcome, future, mailbox):
+def _corofire(obj, coro, outcome, future, mailbox):
     try:
         s = outcome.propagate(coro)
     except StopIteration as e:
@@ -66,7 +68,7 @@ def _corofire(coro, outcome, future, mailbox):
         future.set(AbruptOutcome(e))
     else:
         def post(f):
-            mailbox.add(AMessage(coro, f.get(), future))
+            mailbox.add(AMessage(obj, coro, f.get(), future))
         for f in s.futures:
             f.addcallback(post)
 
