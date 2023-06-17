@@ -76,6 +76,8 @@ class TestSpawn(TestCase):
         class Thrower:
             def x(self):
                 raise X
+            def y(self):
+                return 200
         class Obj:
             def __init__(self, a):
                 self.a = a
@@ -84,7 +86,14 @@ class TestSpawn(TestCase):
                     await self.a.x()
                 except X:
                     return 100
-        self.assertEqual(100, self.spawn(Obj(self.spawn(Thrower()))).foo().wait())
+            async def foo2(self):
+                try:
+                    await self.a.x()
+                except X:
+                    return await self.a.y()
+        a = self.spawn(Obj(self.spawn(Thrower())))
+        self.assertEqual(100, a.foo().wait())
+        self.assertEqual(200, a.foo2().wait())
 
     def test_sharedmailbox(self):
         sums = [Sum() for _ in range(5)]
