@@ -42,12 +42,6 @@ class Encoder:
         extra = 'baz'
         return await self.networkactor.download('bar') + extra
 
-    def hmmm(self):
-        return 100
-
-    async def hmm(self):
-        return await self.actor.hmmm()
-
 class TestSpawn(TestCase):
 
     def setUp(self):
@@ -71,10 +65,13 @@ class TestSpawn(TestCase):
         self.assertEqual('barbarbaz', encoderactor.foo().wait())
 
     def test_suspendthis(self):
-        e = Encoder(None)
-        encoderactor = self.spawn(e)
-        e.actor = encoderactor
-        self.assertEqual(100, encoderactor.hmm().wait())
+        class Obj:
+            def priv(self):
+                return 100
+            async def api(self):
+                return await actor.priv()
+        actor = self.spawn(Obj())
+        self.assertEqual(100, actor.api().wait())
 
     def test_catch(self):
         class X(Exception):
