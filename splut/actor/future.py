@@ -64,7 +64,7 @@ class Future:
                     return outcome
                 self.condition.wait()
 
-    def result(self):
+    def wait(self):
         return self.get().result()
 
     def addcallback(self, f):

@@ -23,10 +23,10 @@ class TestFuture(TestCase):
     def test_works(self):
         def c(g):
             self.assertIs(f, g)
-            v.append(g.result())
+            v.append(g.wait())
         def d(g):
             self.assertIs(f, g)
-            v.append(g.result() + 1)
+            v.append(g.wait() + 1)
         v = []
         f = Future()
         f.addcallback(c)
@@ -47,5 +47,5 @@ class TestFuture(TestCase):
         x = X()
         f.set(AbruptOutcome(x))
         with self.assertRaises(X) as cm:
-            f.result()
+            f.wait()
         self.assertIs(cm.exception, x)

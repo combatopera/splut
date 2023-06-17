@@ -62,19 +62,19 @@ class TestSpawn(TestCase):
         self.assertEqual('SumActor', type(sumactor).__name__)
         f = sumactor.plus(5)
         g = sumactor.plus(2)
-        self.assertEqual(5, f.result())
-        self.assertEqual(7, g.result())
+        self.assertEqual(5, f.wait())
+        self.assertEqual(7, g.wait())
 
     def test_suspend(self):
         networkactor = self.spawn(Network())
         encoderactor = self.spawn(Encoder(networkactor))
-        self.assertEqual('barbarbaz', encoderactor.foo().result())
+        self.assertEqual('barbarbaz', encoderactor.foo().wait())
 
     def test_suspendthis(self):
         e = Encoder(None)
         encoderactor = self.spawn(e)
         e.actor = encoderactor
-        self.assertEqual(100, encoderactor.hmm().result())
+        self.assertEqual(100, encoderactor.hmm().wait())
 
     def test_catch(self):
         class X(Exception):
@@ -90,12 +90,12 @@ class TestSpawn(TestCase):
                     await self.a.x()
                 except X:
                     return 100
-        self.assertEqual(100, self.spawn(C(self.spawn(A()))).foo().result())
+        self.assertEqual(100, self.spawn(C(self.spawn(A()))).foo().wait())
 
     def test_sharedmailbox(self):
         sums = [Sum() for _ in range(5)]
         a = self.spawn(*sums)
-        invokeall([a.plus(1).result for _ in range(100)])
+        invokeall([a.plus(1).wait for _ in range(100)])
         self.assertEqual(100, sum(s.s for s in sums))
 
     def test_asymmetricworkers(self):
@@ -109,8 +109,8 @@ class TestSpawn(TestCase):
         self.assertEqual('XYActor', type(a).__name__)
         g = a.y() # Skip unsuitable worker.
         f = a.x()
-        self.assertEqual(100, f.result())
-        self.assertEqual(200, g.result())
+        self.assertEqual(100, f.wait())
+        self.assertEqual(200, g.wait())
 
     def test_corofail(self):
         class X(Exception):
@@ -124,4 +124,4 @@ class TestSpawn(TestCase):
                 raise X
         f = self.spawn(B()).x(self.spawn(A()))
         with self.assertRaises(X):
-            f.result()
+            f.wait()

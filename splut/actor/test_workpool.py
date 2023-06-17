@@ -71,7 +71,7 @@ class TestWorkPool(TestCase):
         with ThreadPoolExecutor() as e:
             a = Spawn(e)(*self.workers)
             futures = [t(i, i) for t in [a.typea, a.typeb, a.typec] for i in range(4)]
-            invokeall([f.result for f in futures])
+            invokeall([f.wait for f in futures])
         self.assertEqual([
             'A 0 0',
             'A 1 1',
