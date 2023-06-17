@@ -48,7 +48,7 @@ class Encoder:
     async def hmm(self):
         return await self.actor.hmmm()
 
-class TestExchange(TestCase):
+class TestSpawn(TestCase):
 
     def setUp(self):
         self.e = ThreadPoolExecutor()
