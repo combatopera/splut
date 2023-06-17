@@ -43,9 +43,8 @@ class Future:
 
     def __init__(self):
         self.condition = Condition()
-        with self.condition:
-            self.callbacks = []
-            self.outcome = None
+        self.callbacks = []
+        self.outcome = None
 
     def set(self, outcome):
         assert outcome is not None
