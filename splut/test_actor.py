@@ -22,11 +22,11 @@ from unittest import TestCase
 
 class Sum:
 
-    s = 0
+    n = 0
 
-    def plus(self, x):
-        self.s += x
-        return self.s
+    def plus(self, k):
+        self.n += k
+        return self.n
 
 class Network:
 
@@ -89,7 +89,7 @@ class TestSpawn(TestCase):
     def test_sharedmailbox(self):
         sums = [Sum() for _ in range(5)]
         invokeall([a.plus(1).wait for a in [self.spawn(*sums)] for _ in range(100)])
-        self.assertEqual(100, sum(s.s for s in sums))
+        self.assertEqual(100, sum(s.n for s in sums))
 
     def test_asymmetricworkers(self):
         class X:
