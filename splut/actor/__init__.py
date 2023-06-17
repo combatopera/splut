@@ -86,7 +86,10 @@ def _corofire(coro, outcome, future, mailbox):
     except BaseException as e:
         future.set(AbruptOutcome(e))
     else:
-        _catch(s, mailbox, future, coro)
+        def post(f):
+            mailbox.add(AMessage(coro, f.get(), future))
+        for f in s.futures:
+            f.addcallback(post)
 
 class Exchange:
 
@@ -108,9 +111,3 @@ class Exchange:
         for obj in objs:
             obj.actor = actor
         return actor
-
-def _catch(s, mailbox, messagefuture, c):
-    def post(f):
-        mailbox.add(AMessage(c, f.get(), messagefuture))
-    for f in s.futures:
-        f.addcallback(post)
