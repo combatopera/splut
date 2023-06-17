@@ -20,11 +20,10 @@ from threading import Lock
 class Worker:
 
     def __init__(self, obj):
+        self.idle = True
         self.obj = obj
 
 class Mailbox:
-
-    ttl = None
 
     def __init__(self, executor, objs):
         self.queue = []
@@ -34,19 +33,28 @@ class Mailbox:
 
     def add(self, message):
         with self.lock:
-            self.queue.append(message)
-            if self.ttl is None:
-                self.ttl = 1
-                self.executor.submit(self._drain)
+            for worker in self.workers:
+                if worker.idle:
+                    fire = message.resolve(worker.obj)
+                    if fire is not None:
+                        self.executor.submit(self._run, worker, fire)
+                        worker.idle = False
+                        break
             else:
-                self.ttl += 1
+                self.queue.append(message)
 
-    def _drain(self):
+    def _another(self, worker):
+        with self.lock:
+            for i, message in enumerate(self.queue):
+                fire = message.resolve(worker.obj)
+                if fire is not None:
+                    self.queue.pop(i)
+                    return fire
+            worker.idle = True
+
+    def _run(self, worker, fire):
         while True:
-            with self.lock:
-                if not self.ttl:
-                    del self.ttl
-                    break
-                self.ttl -= 1
-                message = self.queue.pop(0)
-            message.resolve(self.workers[0].obj)(self)
+            fire(self)
+            fire = self._another(worker)
+            if fire is None:
+                break
