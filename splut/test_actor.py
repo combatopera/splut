@@ -73,10 +73,10 @@ class TestSpawn(TestCase):
     def test_catch(self):
         class X(Exception):
             pass
-        class A:
+        class Thrower:
             def x(self):
                 raise X
-        class C:
+        class Obj:
             def __init__(self, a):
                 self.a = a
             async def foo(self):
@@ -84,12 +84,11 @@ class TestSpawn(TestCase):
                     await self.a.x()
                 except X:
                     return 100
-        self.assertEqual(100, self.spawn(C(self.spawn(A()))).foo().wait())
+        self.assertEqual(100, self.spawn(Obj(self.spawn(Thrower()))).foo().wait())
 
     def test_sharedmailbox(self):
         sums = [Sum() for _ in range(5)]
-        a = self.spawn(*sums)
-        invokeall([a.plus(1).wait for _ in range(100)])
+        invokeall([a.plus(1).wait for a in [self.spawn(*sums)] for _ in range(100)])
         self.assertEqual(100, sum(s.s for s in sums))
 
     def test_asymmetricworkers(self):
