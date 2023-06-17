@@ -109,3 +109,17 @@ class TestExchange(TestCase):
         f = a.x()
         self.assertEqual(100, f.result())
         self.assertEqual(200, g.result())
+
+    def test_corofail(self):
+        class X(Exception):
+            pass
+        class A:
+            def foo(self):
+                pass
+        class B:
+            async def x(self, a):
+                await a.foo()
+                raise X
+        f = self.x.spawn(B()).x(self.x.spawn(A()))
+        with self.assertRaises(X):
+            f.result()
