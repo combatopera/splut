@@ -108,13 +108,13 @@ class TestSpawn(TestCase):
     def test_corofail(self):
         class X(Exception):
             pass
-        class A:
+        class Q:
             def foo(self):
                 pass
         class B:
             async def x(self, a):
                 await a.foo()
                 raise X
-        f = self.spawn(B()).x(self.spawn(A()))
+        f = self.spawn(B()).x(self.spawn(Q()))
         with self.assertRaises(X):
             f.wait()
