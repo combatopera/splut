@@ -38,9 +38,8 @@ class Encoder:
     def __init__(self, networkactor):
         self.networkactor = networkactor
 
-    async def foo(self):
-        extra = 'baz'
-        return await self.networkactor.download('bar') + extra
+    async def encoded(self):
+        return await self.networkactor.download('bar') + 'baz'
 
 class TestSpawn(TestCase):
 
@@ -60,9 +59,7 @@ class TestSpawn(TestCase):
         self.assertEqual(7, g.wait())
 
     def test_suspend(self):
-        networkactor = self.spawn(Network())
-        encoderactor = self.spawn(Encoder(networkactor))
-        self.assertEqual('barbarbaz', encoderactor.foo().wait())
+        self.assertEqual('barbarbaz', self.spawn(Encoder(self.spawn(Network()))).encoded().wait())
 
     def test_suspendthis(self):
         class Obj:
