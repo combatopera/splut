@@ -22,6 +22,9 @@ class NormalOutcome:
     def __init__(self, obj):
         self.obj = obj
 
+    def propagate(self, coro):
+        return coro.send(self.obj)
+
     def result(self):
         return self.obj
 
@@ -29,6 +32,9 @@ class AbruptOutcome:
 
     def __init__(self, e):
         self.e = e
+
+    def propagate(self, coro):
+        return coro.throw(self.e)
 
     def result(self):
         raise self.e

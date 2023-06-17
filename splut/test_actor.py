@@ -74,6 +74,22 @@ class TestExchange(TestCase):
         encoderactor = self.x.spawn(Encoder(None))
         self.assertEqual(100, encoderactor.hmm().result())
 
+    def test_catch(self):
+        class X(Exception):
+            pass
+        class A:
+            def x(self):
+                raise X
+        class C:
+            def __init__(self, a):
+                self.a = a
+            async def foo(self):
+                try:
+                    await self.a.x()
+                except X:
+                    return 100
+        self.assertEqual(100, self.x.spawn(C(self.x.spawn(A()))).foo().result())
+
     def test_sharedmailbox(self):
         sums = [Sum() for _ in range(5)]
         a = self.x.spawn(*sums)

@@ -80,7 +80,7 @@ class AMessage:
 
 def _corofire(coro, outcome, future, mailbox):
     try:
-        s = coro.send(outcome.result())
+        s = outcome.propagate(coro)
     except StopIteration as e:
         future.set(NormalOutcome(e.value))
     except BaseException as e:
