@@ -96,17 +96,20 @@ class Exchange:
     def __init__(self, executor):
         self.executor = executor
 
-    def spawn(self, obj):
+    def spawn(self, *objs):
         def __getattr__(self, name):
             def post(*args, **kwargs):
                 future = Future()
                 mailbox.add(Message(method, args, kwargs, future))
                 return future
-            method = getattr(obj, name)
+            method = getattr(objs[0], name)
             return post
         mailbox = Mailbox(self.executor)
-        cls = type(f"{type(obj).__name__}Actor", (), {f.__name__: f for f in [__getattr__]})
-        obj.actor = actor = cls()
+        t, = {type(obj) for obj in objs}
+        cls = type(f"{t.__name__}Actor", (), {f.__name__: f for f in [__getattr__]})
+        actor = cls()
+        for obj in objs:
+            obj.actor = actor
         return actor
 
 def _catch(s, mailbox, messagefuture, c):
