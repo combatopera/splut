@@ -26,12 +26,13 @@ from pathlib import Path
 from shutil import copytree, rmtree
 from subprocess import DEVNULL
 from tempfile import mkdtemp
+from threading import Semaphore
 from unittest import TestCase
 
 class Worker:
 
     def __init__(self, template):
-        self.busy = False
+        self.busy = Semaphore()
         self.tempdir = mkdtemp()
         with onerror(self.dispose):
             copy = Path(self.tempdir, 'copy')
@@ -47,13 +48,11 @@ class Worker:
 
     @contextmanager
     def _check(self):
-        assert not self.busy
-        self.busy = True
+        assert self.busy.acquire(False)
         try:
             yield
         finally:
-            assert self.busy
-            self.busy = False
+            self.busy.release()
 
     def typea(self, arg):
         with self._check():
