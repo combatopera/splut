@@ -40,7 +40,7 @@ class Message:
 
     def _fire(self, obj, method, mailbox):
         if iscoroutinefunction(method):
-            Coro(obj, method(*self.args, **self.kwargs)).fire(nulloutcome, self.future, mailbox)
+            Coro(obj, method(*self.args, **self.kwargs), self.future).fire(nulloutcome, mailbox)
         else:
             try:
                 obj = method(*self.args, **self.kwargs)
@@ -54,26 +54,26 @@ class Coro:
     @innerclass
     class Message:
 
-        def __init__(self, outcome, future):
+        def __init__(self, outcome):
             self.outcome = outcome
-            self.future = future
 
         def taskornone(self, obj, mailbox):
             if obj is self.obj:
-                return partial(self.fire, self.outcome, self.future, mailbox)
+                return partial(self.fire, self.outcome, mailbox)
 
-    def __init__(self, obj, coro):
+    def __init__(self, obj, coro, future):
         self.obj = obj
         self.coro = coro
+        self.future = future
 
-    def fire(self, outcome, future, mailbox):
+    def fire(self, outcome, mailbox):
         try:
             g = outcome.propagate(self.coro)
         except StopIteration as e:
-            future.set(NormalOutcome(e.value))
+            self.future.set(NormalOutcome(e.value))
         except BaseException as e:
-            future.set(AbruptOutcome(e))
+            self.future.set(AbruptOutcome(e))
         else:
             def post(outcome):
-                mailbox.add(self.Message(outcome, future))
+                mailbox.add(self.Message(outcome))
             g.listenoutcome(post)
