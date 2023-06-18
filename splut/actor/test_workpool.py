@@ -43,14 +43,14 @@ class Worker:
     def dispose(self):
         rmtree(self.tempdir)
 
-    def typea(self, name, info):
-        self.tee(input = f"A {name} {info}\n")
+    def typea(self, arg):
+        self.tee(input = f"A {arg}\n")
 
-    def typeb(self, name, info):
-        self.tee(input = f"B {name} {info}\n")
+    def typeb(self, arg):
+        self.tee(input = f"B {arg}\n")
 
-    def typec(self, name, info):
-        self.tee(input = f"C {name} {info}\n")
+    def typec(self, arg):
+        self.tee(input = f"C {arg}\n")
 
 class TestWorkPool(TestCase):
 
@@ -69,20 +69,9 @@ class TestWorkPool(TestCase):
         for _ in range(5):
             self.workers.append(Worker(self.masterdir))
         with ThreadPoolExecutor() as e:
-            a = Spawn(e)(*self.workers)
-            futures = [t(i, i) for t in [a.typea, a.typeb, a.typec] for i in range(4)]
-            invokeall([f.wait for f in futures])
+            invokeall([t(i).wait for a in [Spawn(e)(*self.workers)] for t in [a.typea, a.typeb, a.typec] for i in range(4)])
         self.assertEqual([
-            'A 0 0',
-            'A 1 1',
-            'A 2 2',
-            'A 3 3',
-            'B 0 0',
-            'B 1 1',
-            'B 2 2',
-            'B 3 3',
-            'C 0 0',
-            'C 1 1',
-            'C 2 2',
-            'C 3 3',
+            'A 0', 'A 1', 'A 2', 'A 3',
+            'B 0', 'B 1', 'B 2', 'B 3',
+            'C 0', 'C 1', 'C 2', 'C 3',
         ], sorted(sum((w.read().splitlines()[1:] for w in self.workers), [])))
