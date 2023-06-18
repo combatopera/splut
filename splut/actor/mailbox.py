@@ -35,9 +35,9 @@ class Mailbox:
         with self.lock:
             for worker in self.workers:
                 if worker.idle:
-                    fire = message.resolve(worker.obj)
-                    if fire is not None:
-                        self.executor.submit(self._run, worker, fire)
+                    task = message.taskornone(worker.obj, self)
+                    if task is not None:
+                        self.executor.submit(self._run, worker, task)
                         worker.idle = False
                         break
             else:
@@ -46,15 +46,15 @@ class Mailbox:
     def _another(self, worker):
         with self.lock:
             for i, message in enumerate(self.queue):
-                fire = message.resolve(worker.obj)
-                if fire is not None:
+                task = message.taskornone(worker.obj, self)
+                if task is not None:
                     self.queue.pop(i)
-                    return fire
+                    return task
             worker.idle = True
 
-    def _run(self, worker, fire):
+    def _run(self, worker, task):
         while True:
-            fire(self)
-            fire = self._another(worker)
-            if fire is None:
+            task()
+            task = self._another(worker)
+            if task is None:
                 break

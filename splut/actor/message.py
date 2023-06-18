@@ -29,13 +29,13 @@ class Message:
         self.kwargs = kwargs
         self.future = future
 
-    def resolve(self, obj):
+    def taskornone(self, obj, mailbox):
         try:
             method = getattr(obj, self.methodname)
         except AttributeError:
             pass
         else:
-            return partial(self._fire, obj, method)
+            return partial(self._fire, obj, method, mailbox)
 
     def _fire(self, obj, method, mailbox):
         if iscoroutinefunction(method):
@@ -57,9 +57,9 @@ class Coro:
             self.outcome = outcome
             self.future = future
 
-        def resolve(self, obj):
+        def taskornone(self, obj, mailbox):
             if obj is self.coro.obj:
-                return partial(self.coro.fire, self.outcome, self.future)
+                return partial(self.coro.fire, self.outcome, self.future, mailbox)
 
     def __init__(self, obj, coro):
         self.obj = obj
