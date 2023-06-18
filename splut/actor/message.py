@@ -72,6 +72,4 @@ class Coro:
         except BaseException as e:
             self.future.set(AbruptOutcome(e))
         else:
-            def post(outcome):
-                mailbox.add(self.Message(outcome))
-            g.listenoutcome(post)
+            g.listenoutcome(lambda o: mailbox.add(self.Message(o)))
