@@ -72,4 +72,9 @@ class Coro:
         except BaseException as e:
             self.future.set(AbruptOutcome(e))
         else:
-            g.listenoutcome(lambda o: mailbox.add(self.Message(o)))
+            try:
+                listenoutcome = g.listenoutcome
+            except AttributeError:
+                self.future.set(AbruptOutcome(RuntimeError(f"Unusable yield: {g}")))
+            else:
+                listenoutcome(lambda o: mailbox.add(self.Message(o)))

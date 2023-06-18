@@ -128,3 +128,31 @@ class TestSpawn(TestCase):
         f = self.spawn(T()).x(self.spawn(Q()))
         with self.assertRaises(X):
             f.wait()
+
+    def test_badawaitable(self):
+        from asyncio import sleep
+        class Obj:
+            async def m(self):
+                return await sleep(5)
+        w = self.spawn(Obj()).m().wait
+        with self.assertRaises(RuntimeError):
+            w()
+
+    def test_badawaitable2(self):
+        from asyncio import Future
+        g = Future()
+        class Obj:
+            async def m(self):
+                return await g
+        w = self.spawn(Obj()).m().wait
+        with self.assertRaises(RuntimeError) as cm:
+            w()
+        self.assertEqual((f"Unusable yield: {g}",), cm.exception.args)
+
+    def test_badawaitable3(self):
+        class Obj:
+            async def m(self):
+                return await 100
+        w = self.spawn(Obj()).m().wait
+        with self.assertRaises(TypeError):
+            w()
