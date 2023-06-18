@@ -17,6 +17,7 @@
 
 from . import Spawn
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from diapyr.util import invokeall
 from lagoon import tee
 from lagoon.program import partial
@@ -30,6 +31,7 @@ from unittest import TestCase
 class Worker:
 
     def __init__(self, template):
+        self.busy = False
         self.tempdir = mkdtemp()
         with onerror(self.dispose):
             copy = Path(self.tempdir, 'copy')
@@ -43,14 +45,27 @@ class Worker:
     def dispose(self):
         rmtree(self.tempdir)
 
+    @contextmanager
+    def _check(self):
+        assert not self.busy
+        self.busy = True
+        try:
+            yield
+        finally:
+            assert self.busy
+            self.busy = False
+
     def typea(self, arg):
-        self.tee(input = f"A {arg}\n")
+        with self._check():
+            self.tee(input = f"A {arg}\n")
 
     def typeb(self, arg):
-        self.tee(input = f"B {arg}\n")
+        with self._check():
+            self.tee(input = f"B {arg}\n")
 
     def typec(self, arg):
-        self.tee(input = f"C {arg}\n")
+        with self._check():
+            self.tee(input = f"C {arg}\n")
 
 class TestWorkPool(TestCase):
 
