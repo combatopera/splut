@@ -16,6 +16,7 @@
 # along with splut.  If not, see <http://www.gnu.org/licenses/>.
 
 from .future import AbruptOutcome, NormalOutcome
+from diapyr.util import innerclass
 from functools import partial
 from inspect import iscoroutinefunction
 
@@ -50,16 +51,16 @@ class Message:
 
 class Coro:
 
+    @innerclass
     class Message:
 
-        def __init__(self, coro, outcome, future):
-            self.coro = coro
+        def __init__(self, outcome, future):
             self.outcome = outcome
             self.future = future
 
         def taskornone(self, obj, mailbox):
-            if obj is self.coro.obj:
-                return partial(self.coro.fire, self.outcome, self.future, mailbox)
+            if obj is self.obj:
+                return partial(self.fire, self.outcome, self.future, mailbox)
 
     def __init__(self, obj, coro):
         self.obj = obj
@@ -74,5 +75,5 @@ class Coro:
             future.set(AbruptOutcome(e))
         else:
             def post(outcome):
-                mailbox.add(self.Message(self, outcome, future))
+                mailbox.add(self.Message(outcome, future))
             g.listenoutcome(post)
