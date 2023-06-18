@@ -48,18 +48,18 @@ class Message:
             else:
                 self.future.set(NormalOutcome(obj))
 
-class AMessage:
-
-    def __init__(self, coro, outcome, future):
-        self.coro = coro
-        self.outcome = outcome
-        self.future = future
-
-    def resolve(self, obj):
-        if obj is self.coro.obj:
-            return partial(self.coro.fire, self.outcome, self.future)
-
 class Coro:
+
+    class Message:
+
+        def __init__(self, coro, outcome, future):
+            self.coro = coro
+            self.outcome = outcome
+            self.future = future
+
+        def resolve(self, obj):
+            if obj is self.coro.obj:
+                return partial(self.coro.fire, self.outcome, self.future)
 
     def __init__(self, obj, coro):
         self.obj = obj
@@ -74,5 +74,5 @@ class Coro:
             future.set(AbruptOutcome(e))
         else:
             def post(f):
-                mailbox.add(AMessage(self, f.get(), future))
+                mailbox.add(self.Message(self, f.get(), future))
             g.addcallback(post)
