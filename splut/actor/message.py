@@ -34,20 +34,18 @@ class Message:
         try:
             method = getattr(obj, self.methodname)
         except AttributeError:
-            pass
-        else:
-            return partial(self._fire, obj, method, mailbox)
-
-    def _fire(self, obj, method, mailbox):
+            return
         if iscoroutinefunction(method):
-            Coro(obj, method(*self.args, **self.kwargs), self.future).fire(nulloutcome, mailbox)
+            return partial(Coro(obj, method(*self.args, **self.kwargs), self.future).fire, nulloutcome, mailbox)
+        return partial(self._fire, method, mailbox)
+
+    def _fire(self, method, mailbox):
+        try:
+            value = method(*self.args, **self.kwargs)
+        except BaseException as e:
+            self.future.set(AbruptOutcome(e))
         else:
-            try:
-                obj = method(*self.args, **self.kwargs)
-            except BaseException as e:
-                self.future.set(AbruptOutcome(e))
-            else:
-                self.future.set(NormalOutcome(obj))
+            self.future.set(NormalOutcome(value))
 
 class Coro:
 
