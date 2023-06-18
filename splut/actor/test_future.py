@@ -21,20 +21,18 @@ from unittest import TestCase
 class TestFuture(TestCase):
 
     def test_works(self):
-        def c(g):
-            self.assertIs(f, g)
-            v.append(g.wait())
-        def d(g):
-            self.assertIs(f, g)
-            v.append(g.wait() + 1)
+        def c(o):
+            v.append(o.result())
+        def d(o):
+            v.append(o.result() + 1)
         v = []
         f = Future()
-        f.addcallback(c)
+        f.listenoutcome(c)
         with self.assertRaises(AssertionError):
             f.set(None)
         f.set(NormalOutcome(100))
         self.assertEqual([100], v)
-        f.addcallback(d)
+        f.listenoutcome(d)
         self.assertEqual([100, 101], v)
         with self.assertRaises(AssertionError):
             f.set(NormalOutcome(200))

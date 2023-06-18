@@ -54,7 +54,7 @@ class Future:
             self.condition.notify_all()
             callbacks, self.callbacks = self.callbacks, None
         for f in callbacks:
-            f(self)
+            f(outcome)
 
     def get(self):
         with self.condition:
@@ -67,12 +67,13 @@ class Future:
     def wait(self):
         return self.get().result()
 
-    def addcallback(self, f):
+    def listenoutcome(self, f):
         with self.condition:
             if self.callbacks is not None:
                 self.callbacks.append(f)
                 return
-        f(self)
+            outcome = self.outcome
+        f(outcome)
 
     def __await__(self):
         return (yield self)
