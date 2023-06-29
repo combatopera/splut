@@ -28,6 +28,9 @@ class NormalOutcome:
     def result(self):
         return self.obj
 
+    def forget(self, log):
+        pass
+
 class AbruptOutcome:
 
     def __init__(self, e):
@@ -38,6 +41,9 @@ class AbruptOutcome:
 
     def result(self):
         raise self.e
+
+    def forget(self, log):
+        log.error('Task failed:', exc_info = self.e)
 
 class Future:
 
@@ -77,3 +83,6 @@ class Future:
 
     def __await__(self):
         return (yield self)
+
+    def forget(self, log):
+        self.listenoutcome(lambda o: o.forget(log))
