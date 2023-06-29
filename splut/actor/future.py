@@ -84,5 +84,5 @@ class Future:
     def __await__(self):
         return (yield self)
 
-    def forget(self, log):
+    def andforget(self, log):
         self.listenoutcome(lambda o: o.forget(log))
