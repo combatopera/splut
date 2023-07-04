@@ -37,9 +37,9 @@ class Message:
             return
         if iscoroutinefunction(method):
             return partial(Coro(obj, method(*self.args, **self.kwargs), self.future).fire, nulloutcome, mailbox)
-        return partial(self._fire, method, mailbox)
+        return partial(self._fire, method)
 
-    def _fire(self, method, mailbox):
+    def _fire(self, method):
         try:
             value = method(*self.args, **self.kwargs)
         except BaseException as e:
